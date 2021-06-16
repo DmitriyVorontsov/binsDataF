@@ -290,18 +290,18 @@ void datawork::lineToData()
 
 void datawork::filt()
 {
-    //write data
-    quaternions.push_back(q_read);
-    accelerations.push_back(a_read);
-    //delete gravity    
+
+    //delete gravity
+    /*
     float g0 = 2 * (q_read.q1 * q_read.q3 - q_read.q0 * q_read.q2);
     float g1 = 2 * (q_read.q0 * q_read.q1 + q_read.q2 * q_read.q3);
     float g2 = q_read.q0 * q_read.q0 - q_read.q1 * q_read.q1 -
-            q_read.q2 * q_read.q2 + q_read.q3 * q_read.q3;    
+            q_read.q2 * q_read.q2 + q_read.q3 * q_read.q3;
     a_read.x = a_read.x - g0;
     a_read.y = a_read.y - g1;
     a_read.z = a_read.z - g2;
-    std::cout << count << "  " << a_read.x << " " << a_read.y << " " << a_read.z << std::endl;
+*/
+    //std::cout << count << "  " << a_read.x << " " << a_read.y << " " << a_read.z << std::endl;
     acc_nograv.push_back(a_read);
     //accelerations magnitute
     float accMag;
@@ -309,30 +309,104 @@ void datawork::filt()
     //lpfilter acc magnitude
     float alpha = 0.9;
     lpMag  = lpMag*(1 - alpha) + accMag * alpha;
+    //std::cout<<"lpMag "<<lpMag<<std::endl;
     magnLp.push_back(lpMag);
     //identify staionary periods
     if (lpMag > statKoeff)
         statPeriods.push_back(0);
     else statPeriods.push_back(1);
+
+
+
     //get velocity
-    if ((lpMag < statKoeff) || (count < 200)) //for calibrate
+//    if ((lpMag < statKoeff) || (count < 200)) //for calibrate
+//    {
+//        i_vel.x = 0;
+//        i_vel.y = 0;
+//        i_vel.z = 0;
+//    }
+
+
+    if (lpMag < statKoeff)
     {
-        i_vel.x = 0;
-        i_vel.y = 0;
-        i_vel.z = 0;
+        if(i_pos.x != 0) i_vel.x = i_pos.x;       //Для угловой скорости
+        if(i_pos.y != 0) i_vel.y = i_pos.y;
+        if(i_pos.z != 0) i_vel.z = i_pos.z;
+        /*
+                i_vel.x = 0;
+                i_vel.y = 0;
+                i_vel.z = 0;
+*/
+                //Сохраняем нулевые значения ускорения и кватернионы (за компанию)
+                a_read.x=0;
+                a_read.y=0;
+                a_read.z=0;
+
+                quaternions.push_back(q_read);
+                accelerations.push_back(a_read);
+
+              /*  zeroPeriod++;
+                if(zeroPeriod>8)
+                {
+                    zeroTransX=false;
+                    zeroTransY=false;
+                    zeroTransZ=false;
+                }*/
+                std::cout << count << "  " << a_read.x << " " << a_read.y << " " << a_read.z << " " <<zeroPeriod <<std::endl;
+
+//                if(countx>0) countx--;
+//                if(county>0) county--;
+//                if(countz>0) countz--;
+
     }
+    else
+    {
+        //Смотрим резкий переход через 0
+//        if((accelerations.back().x>0 && a_read.x<0) || (accelerations.back().x<0 && a_read.x>0)) {countx=3; a_read.x=0; i_vel.x = 0;}
+//        if((accelerations.back().y>0 && a_read.y<0) || (accelerations.back().y<0 && a_read.y>0)) {county=3; a_read.y=0; i_vel.y = 0;}
+//        if((accelerations.back().z>0 && a_read.z<0) || (accelerations.back().z<0 && a_read.z>0)) {countz=3; a_read.z=0; i_vel.z = 0;}
+
+        //Отсекаем обратный импульс
+//        if(countx>0) {a_read.x=0;}
+//        if(county>0) {a_read.y=0;}
+//        if(countz>0) {a_read.z=0;}
+
+/*
+        if(((accelerations.back().x>0 && a_read.x<0) || (accelerations.back().x<0 && a_read.x>0)) && zeroPeriod<8)  zeroTransX=true;
+        if(((accelerations.back().y>0 && a_read.y<0) || (accelerations.back().y<0 && a_read.y>0)) && zeroPeriod<8)  zeroTransY=true;
+        if(((accelerations.back().z>0 && a_read.z<0) || (accelerations.back().z<0 && a_read.z>0)) && zeroPeriod<8)  zeroTransZ=true;
+        zeroPeriod=0;
+
+        if(zeroTransX) {a_read.x=0; i_vel.x = 0;}
+        if(zeroTransY) {a_read.y=0; i_vel.y = 0;}
+        if(zeroTransZ) {a_read.z=0; i_vel.z = 0;}
+*/
+        std::cout << count << "  " << a_read.x << " " << a_read.y << " " << a_read.z << std::endl;
+        quaternions.push_back(q_read);
+        accelerations.push_back(a_read);
+
+//        a_read.x*=9.8;
+//        a_read.y*=9.8;
+//        a_read.z*=9.8;
+
     i_vel.x = i_vel.x + a_read.x*samplePeriod;
     i_vel.y = i_vel.y + a_read.y*samplePeriod;
     i_vel.z = i_vel.z + a_read.z*samplePeriod;
     velocities.push_back(i_vel);
+
+
     //get position
-    i_pos.x = i_pos.x + i_vel.x*samplePeriod;
-    i_pos.y = i_pos.y + i_vel.y*samplePeriod;
-    i_pos.z = i_pos.z + i_vel.z*samplePeriod;
+//    i_pos.x = i_pos.x + i_vel.x*samplePeriod*10;
+//    i_pos.y = i_pos.y + i_vel.y*samplePeriod*10;
+//    i_pos.z = i_pos.z + i_vel.z*samplePeriod*10;
+    i_pos.x = i_vel.x;        //Для угловой скорости
+    i_pos.y = i_vel.y;
+    i_pos.z = i_vel.z;
     positions.push_back(i_pos);
+
     //inc count
     count++;
-
+    }
 }
 
 void datawork::clearAll()

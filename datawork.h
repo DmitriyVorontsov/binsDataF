@@ -47,13 +47,17 @@ public:
     QVector <int> statPeriods;//стационарные периоды
 
     float lpMag = 0;//хранение данный отфильтрованной магнитуды
-    float statKoeff = 0.045;//коэффициэнт отсечения
+    float statKoeff = 0.03;//коэффициэнт отсечения
     p_data i_vel{0.0,0.0,0.0};//переменная для интегрирования скоростей
     p_data i_pos{0.0,0.0,0.0};//переменная для интегрирования координат
-    float samplePeriod = 0.055555;
+    float samplePeriod = 0.01;
     void readStr(QString str);
 
     int filter_mode = 1;
+
+    int countx=0, county=0, countz=0;   //Счетчики для фильтрации обратного импульса
+    unsigned int zeroPeriod=8;          //Счетчик периодов спокойствия
+    bool zeroTransX=0, zeroTransY=0, zeroTransZ=0;  //Переход через 0
 
     p_data quatern2rotMatCOORD(Quaternion quats, p_data poi);
     p_data transMat(p_data yp, p_data zp);

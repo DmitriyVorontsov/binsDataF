@@ -3,9 +3,8 @@
 #include "MPU6050_6Axis_MotionApps_V6_12.h"
 #include "BluetoothSerial.h"
 
-#define TO_DEG 57.29577951308232087679815481410517033f
 #define FK 0.1 // коэффициент комплементарного фильтра
-#define statKoeff 0.02
+#define statKoeff 0.04
 
 BluetoothSerial SerialBT;
 
@@ -17,8 +16,9 @@ float gxf, gyf, gzf;
 float angleX = 0;
 float angleY = 0;
 float angleZ = 0;
-float xVel=0, yVel=0, zVel=0;
-float xPos=0, yPos=0, zPos=0;
+float xVel=0, yVel=0, zVel=0;           //Скорости
+float xVelOld=0, yVelOld=0, zVelOld=0;  //Скорости в предыдущий момент времени
+float xPos=0, yPos=0, zPos=0;           //Координаты
 
 
 const float toDeg = 180.0 / M_PI;
@@ -33,7 +33,7 @@ float ypr[3];           // [yaw, pitch, roll]   yaw/pitch/roll container and gra
 
 MPU6050 mpu;
 
-float samplePeriod = 0.0;
+int samplePeriod = 0;
 
 void initDMP(); 
 void getAngles();
@@ -56,8 +56,8 @@ void setup()
   initDMP();
   delay(50);
   Serial.println("Calibration...");
-  mpu.CalibrateAccel(6);
-  mpu.CalibrateGyro(6);
+  mpu.CalibrateAccel(10);
+  mpu.CalibrateGyro(10);
 }
 
 int count = 0;
@@ -68,53 +68,69 @@ void loop()
   getAngles();
   mpu.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
 
-axf = ax / 16384.0;
-ayf = ay / 16384.0;
-azf = az / 16384.0;
+//переводим в g
+axf = ax / 16384.0f;
+ayf = ay / 16384.0f;
+azf = az / 16384.0f;
 
-    float g0 = 2 * (q.x * q.z - q.w * q.y);
-    float g1 = 2 * (q.w * q.x + q.y * q.z);
-    float g2 = q.w * q.w - q.x * q.x - q.y * q.y + q.z * q.z;
-   axf = axf - g0;
-   ayf = ayf - g1;
-   azf = azf - g2;
+gxf=gx/32768.0f * 250;
+gyf=gy/32768.0f * 250;
+gzf=gz/32768.0f * 250;
 
+//Удаляем гравитацию
+axf-=gravity.x;
+ayf-=gravity.y;
+azf-=gravity.z;
 
-   float accMag;
-   accMag = sqrt(axf*axf + ayf*ayf + azf*azf);
-
+//Магнитуда
+   float accMag = sqrt(axf*axf + ayf*ayf + azf*azf);
+//g -> м/сс
+/*
    axf *= 9.8;
    ayf *= 9.8;
    azf *= 9.8;
-
+ */  
+ /*
+   if(abs(axf)<0.1)axf=0;
+   if(abs(ayf)<0.1)ayf=0;
+   if(abs(azf)<0.1)azf=0;
+   */
+/*
    if(accMag < statKoeff)
    {
       xVel=0;
       yVel=0;
       zVel=0;
+
+      xVelOld=0;
+      yVelOld=0;
+      zVelOld=0;
+
    }
    else
-   {
-      xVel = xVel + axf*samplePeriod;
-      yVel = yVel + ayf*samplePeriod;
-      zVel = zVel + azf*samplePeriod;
+   {   
+      xVel = xVel + axf*samplePeriod/1000.0;
+      yVel = yVel + ayf*samplePeriod/1000.0;
+      zVel = zVel + azf*samplePeriod/1000.0;
 
-      xPos = xPos + xVel*samplePeriod;
-      yPos = yPos + yVel*samplePeriod;
-      zPos = zPos + zVel*samplePeriod;
+      xPos = xPos + xVel*samplePeriod/1000.0;
+      yPos = yPos + yVel*samplePeriod/1000.0;
+      zPos = zPos + zVel*samplePeriod/1000.0;
    }
-      char Mesadge[100];
-      //String str=String(xPos)+','+String(yPos)+','+String(zPos)+','+String(millis() - start); 
-      int delta = millis() - start;
-      int kol = sprintf(Mesadge,"%f %c %f %c %f %c", xPos, ',', yPos, ',', zPos,'\n');
-      uint8_t Mesadge2[100];
-      for(int i=0; i<kol; i++)Mesadge2[i] = Mesadge[i];
-      /*
-      SerialBT.print(xPos);SerialBT.print(",");
-      SerialBT.print(yPos);SerialBT.print(",");
-      SerialBT.println(zPos);
-      */
-      SerialBT.write(Mesadge2, kol);
+   */
+     // char Mesadge[100];
+      String str='+'+String(q.w)+','+String(q.x)+','+String(q.y)+','+String(q.z)+','+String(gxf)+','+String(gyf)+','+String(gzf)+'+';
+      //int delta = millis() - start;
+     // int kol = sprintf(Mesadge,"%f %c %f %c %f %c %d %c", axf, ',', ayf, ',', azf,',',samplePeriod,'\n');
+      
+      //Копируем char в uint8_t т.к. это хочет write
+      //uint8_t Mesadge2[100];
+     // for(int i=0; i<kol; i++)Mesadge2[i] = Mesadge[i];
+      Serial.println(str);
+      SerialBT.println(str);
+      //SerialBT.write(Mesadge2, kol);
+
+   //Отправка нескольких измерений пакетом
       /*
       if(count = 4)
       {
@@ -128,22 +144,9 @@ azf = az / 16384.0;
       }
       else count++;
       */
-      //SerialBT.println(str);
-      //delay(500);
-      samplePeriod = (millis() - start) / 1000.0;
-      
-
-/*  Serial.print(angleX); Serial.print(",  ");
-  Serial.print(angleY); Serial.print(",  ");
-  Serial.println(angleZ);*/
- /* 
-  Serial.print("+");
-  Serial.print(q.w); Serial.print(",");Serial.print(q.x); Serial.print(",");
-  Serial.print(q.y); Serial.print(",");Serial.print(q.z);Serial.print(",");
-  Serial.print(axf);Serial.print(",");Serial.print(ayf);Serial.print(",");Serial.print(azf);
-  Serial.println("+");
-*/
-  
+ 
+      samplePeriod = (millis() - start);
+      if(samplePeriod<10) delay(10-samplePeriod);
 }
 
 
