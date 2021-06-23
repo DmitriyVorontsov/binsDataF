@@ -30,6 +30,7 @@ public:
 private:
     QString datastr;//входная строка
     p_data a_read;
+    p_data g_read;
     //Quaternion q_read;
     void lineToData();
     void filt();
@@ -47,7 +48,7 @@ public:
     QVector <int> statPeriods;//стационарные периоды
 
     float lpMag = 0;//хранение данный отфильтрованной магнитуды
-    float statKoeff = 0.03;//коэффициэнт отсечения
+    float statKoeff = 0.025;//коэффициэнт отсечения
     p_data i_vel{0.0,0.0,0.0};//переменная для интегрирования скоростей
     p_data i_pos{0.0,0.0,0.0};//переменная для интегрирования координат
     float samplePeriod = 0.01;
