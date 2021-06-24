@@ -119,7 +119,7 @@ azf-=gravity.z;
    }
    */
      // char Mesadge[100];
-      String str='+'+String(q.w)+','+String(q.x)+','+String(q.y)+','+String(q.z)+','+String(gxf)+','+String(gyf)+','+String(gzf)+'+';
+      String str='+'+String(q.w)+','+String(q.x)+','+String(q.y)+','+String(q.z)+','+String(gxf)+','+String(gyf)+','+String(gzf)+','+String(axf)+','+String(ayf)+','+String(azf)+'+';
       //int delta = millis() - start;
      // int kol = sprintf(Mesadge,"%f %c %f %c %f %c %d %c", axf, ',', ayf, ',', azf,',',samplePeriod,'\n');
       
@@ -129,21 +129,6 @@ azf-=gravity.z;
       Serial.println(str);
       SerialBT.println(str);
       //SerialBT.write(Mesadge2, kol);
-
-   //Отправка нескольких измерений пакетом
-      /*
-      if(count = 4)
-      {
-        SerialBT.write(Mesadge2, kol);
-        SerialBT.write(Mesadge2, kol);
-        SerialBT.write(Mesadge2, kol);
-        SerialBT.write(Mesadge2, kol);
-        SerialBT.write(Mesadge2, kol);
-        SerialBT.println(millis()-st);
-        count=0;
-      }
-      else count++;
-      */
  
       samplePeriod = (millis() - start);
       if(samplePeriod<10) delay(10-samplePeriod);

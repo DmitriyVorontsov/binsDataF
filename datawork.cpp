@@ -256,6 +256,15 @@ void datawork::lineToData()
                         a_read.y = value;
                         break;
                     }
+                    case 6: {
+                        a_read.z=value;
+                    }
+                    case 7: {
+                        g_read.x=value;
+                    }
+                    case 8: {
+                        g_read.y=value;
+                    }
                 }
 
                 valueNumber++;
@@ -266,7 +275,7 @@ void datawork::lineToData()
             if (i == datastr.length() - 1)
             {
                 value = valueLine.toFloat();
-                a_read.z = value;
+                g_read.z = value;
                 valueNumber++;
                 value = 0;
                 valueLine = "";
@@ -305,7 +314,7 @@ void datawork::filt()
     acc_nograv.push_back(a_read);
     //accelerations magnitute
     float accMag;
-    accMag = sqrt(a_read.x*a_read.x + a_read.y*a_read.y + a_read.z*a_read.z);
+    accMag = sqrt(g_read.x*g_read.x + g_read.y*g_read.y + g_read.z*g_read.z);
     //lpfilter acc magnitude
     float alpha = 0.9;
     lpMag  = lpMag*(1 - alpha) + accMag * alpha;
